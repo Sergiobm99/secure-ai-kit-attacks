@@ -53,6 +53,13 @@ for source, destination, imports in FILES:
     (PUB / destination).parent.mkdir(parents=True, exist_ok=True)
     (PUB / destination).write_text(ported, encoding="utf-8", newline="\n")
 
+    # La cabecera MIT es lo que ACTIVA la valvula de doble licencia del LICENSE del kit: sin ella,
+    # esa clausula apunta a algo que no existe y el mismo fichero queda bajo dos licencias sin nada
+    # que resuelva el conflicto. Se exige aqui para que no se pierda en el siguiente porte.
+    if not ported.startswith("// SPDX-License-Identifier: MIT"):
+        print(f"!! {destination}: falta la cabecera SPDX-License-Identifier: MIT")
+        failures += 1
+
     diff = [line for line in difflib.unified_diff(
         original.split("\n"), ported.split("\n"), lineterm="", n=0)
         if line.startswith(("+", "-")) and not line.startswith(("+++", "---"))]

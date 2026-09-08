@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // lib/guardrails/context-isolation.ts — G04, and the reference guardrail for the model-behaviour kind.
 //
 // The indirect-injection attack works because retrieved text is glued onto the user's turn, so a line

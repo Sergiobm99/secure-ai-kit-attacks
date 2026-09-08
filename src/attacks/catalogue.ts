@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // attacks/catalogue.ts — the attacks, and what each one must not be allowed to do.
 //
 // Read this file first if you are evaluating the kit. It is the whole argument: every guardrail the

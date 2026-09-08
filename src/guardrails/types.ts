@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // lib/guardrails/types.ts — the seam every guardrail plugs into.
 //
 // A guardrail is a set of optional hooks, run in registration order at four points in the agent
