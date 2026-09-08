@@ -92,9 +92,18 @@ DEFINITIONS
    This Agreement grants a license to use, not a transfer of ownership. Your own
    original code in an End Product is yours.
 
-   Updates: your purchase includes access to updates released while your access is
-   active, under the same tier. It does not obligate the Licensor to produce
-   updates for any period.
+   Updates: your purchase includes access to updates released under the same tier,
+   for as long as You hold a licence under this Agreement.
+
+   The Licensor commits to publishing updates for TWELVE MONTHS from the first
+   public release of the Kit. That commitment is stated on the website and on the
+   pricing page, and it is repeated here on purpose: these terms are the document
+   that governs, so a promise made when You bought that did not appear here would
+   be a promise this Agreement quietly took back. After those twelve months,
+   updates continue at the Licensor's discretion and the website says which.
+
+   Nothing in this clause limits Your rights to a conforming product under the law
+   of Your own country, including any statutory right to updates.
 
    Warranty disclaimer: THE KIT IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
