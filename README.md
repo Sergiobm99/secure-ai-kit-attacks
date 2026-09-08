@@ -6,8 +6,9 @@ against. Plus an adapter so you can point those attacks at the application you a
 
 Nothing here is a demo build or a trimmed version. `src/guardrails/context-isolation.ts` and
 `src/attacks/catalogue.ts` are **byte-for-byte the files that ship in the paid kit**, with one import
-line rewritten so they resolve inside this repository. That is checked by the script that copies
-them: if the difference ever grows past an import, it shows.
+line rewritten so they resolve inside this repository. The script that copies them is here too
+([tools/port-from-kit.py](tools/port-from-kit.py)) and it prints the diff every time it runs: if
+that difference ever grows past an import line, you see it, and so does anyone reading its output.
 
 ## Why you would look at this
 
