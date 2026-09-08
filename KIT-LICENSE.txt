@@ -1,0 +1,134 @@
+Secure AI Kit — License Agreement
+
+Copyright (c) 2026 Sergio Belmonte Morales. All rights reserved.
+
+⚠️ NOT YET REVIEWED BY A LAWYER, and it must be before the first sale.
+
+The identity is filled in, and deliberately matches what the site's legal notice
+already publishes, so the two cannot drift apart: the licensor is a named individual,
+not a company. If that ever becomes a company, this document changes with it.
+
+What still needs a lawyer is the substance, and it matters more now that the site
+publishes a refund window, VAT handling and a twelve-month update commitment. This is
+a draft written to be clear and standard; it is not legal advice.
+
+--------------------------------------------------------------------------------
+
+This software, together with its source code, documentation, tests and assets
+(the "Kit"), is licensed, not sold. You are granted the rights below in exchange
+for a one-time purchase through the seller's checkout provider. Which rights you
+have depends on the tier you purchased — Personal or Commercial. Your purchase
+receipt states the tier, and the receipt is authoritative if it ever conflicts
+with the indicative prices named here.
+
+By downloading, copying or using the Kit you accept this Agreement. If you do not
+accept it, do not use the Kit.
+
+
+DEFINITIONS
+
+  "You" / "Licensee"   the individual or organization that purchased a license.
+  "Developer"          a natural person who works with the Kit's source code.
+  "End Product"        an application or service You build that incorporates part
+                       of the Kit, and in which the Kit is not itself the product
+                       being distributed (see "Not permitted", below).
+  "Licensor"           Sergio Belmonte Morales, the copyright holder.
+
+
+1. PERSONAL LICENSE  (indicative price: EUR 99, one-time)
+
+   Granted to ONE named Developer.
+
+   You may:
+     - Use the Kit to build unlimited End Products that You own and operate.
+     - Modify the source freely for use in those End Products.
+     - Ship those End Products, including ones that earn money, to your own users.
+     - Keep and use every future update released while your access is active.
+
+   You may not:
+     - Share the Kit's source with any other Developer, or use it as part of a
+       team. A second Developer needs their own license.
+     - Use the Kit to build End Products delivered to clients as contract or
+       agency work. That is what the Commercial License is for.
+
+
+2. COMMERCIAL LICENSE  (indicative price: EUR 249, one-time)
+
+   Granted to ONE organization (a company, or a sole trader operating as a
+   business), covering all of that organization's Developers.
+
+   You may:
+     - Everything the Personal License allows.
+     - Share the Kit's source among the Developers of your organization.
+     - Use the Kit to build End Products delivered to clients as contract, agency
+       or freelance work — each such End Product is a permitted use.
+     - Use the Kit across unlimited internal and client projects.
+
+   Upgrading from Personal:
+     A Personal licensee may move to the Commercial License at any time by paying the
+     difference between the two prices in force when the upgrade is purchased (EUR 150
+     at the prices named above). The Commercial License then replaces the Personal one
+     for the same licensee. The original purchase is not refunded and does not need to
+     be: nothing built under the Personal License stops being licensed.
+
+
+3. TERMS COMMON TO BOTH TIERS
+
+   Not permitted under any tier:
+     - Reselling, sublicensing, publishing or otherwise redistributing the Kit's
+       source code, in whole or in substantial part, as itself.
+     - Using the Kit to create a product that competes with it — a boilerplate,
+       template, starter kit or course whose main value is the Kit's code.
+     - Removing or altering this license or the copyright notices in the source.
+     - Sharing your download access or credentials outside the licensed
+       Developer (Personal) or organization (Commercial).
+
+   Building and shipping your own End Products is exactly what the Kit is for; the
+   restrictions above exist only to stop the Kit being resold or cloned as a
+   competing product. When in doubt about whether a use is permitted, ask at
+   info@secureaikit.com before assuming.
+
+   Ownership: the Kit and all intellectual property in it remain the Licensor's.
+   This Agreement grants a license to use, not a transfer of ownership. Your own
+   original code in an End Product is yours.
+
+   Updates: your purchase includes access to updates released while your access is
+   active, under the same tier. It does not obligate the Licensor to produce
+   updates for any period.
+
+   Warranty disclaimer: THE KIT IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, SECURITY, AND
+   NON-INFRINGEMENT. The Kit reduces the risk of certain attacks on LLM
+   applications; it does not guarantee that an application built with it is secure.
+   Security depends on how You configure, extend and operate it, and on systems and
+   models outside the Kit. You are responsible for reviewing and testing any
+   application You ship.
+
+   Limitation of liability: TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT
+   SHALL THE LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+   IN CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+   KIT OR ITS USE. Where liability cannot be excluded by law, it is limited to the
+   amount You paid for the license.
+
+   Termination: this Agreement ends automatically if You breach it. On termination
+   You must stop using the Kit and destroy your copies of its source. End Products
+   already shipped in good faith before termination are not affected.
+
+   Consumer rights: nothing in this Agreement removes rights You have under
+   mandatory consumer-protection law that cannot be waived. Because the Kit is
+   digital content delivered immediately, the statutory right of withdrawal may not
+   apply once download access has been provided; the seller's refund policy governs
+   refunds.
+
+   Governing law: this Agreement is governed by the law of Spain, and its
+   courts have jurisdiction, without prejudice to mandatory consumer protections in
+   Your place of residence.
+
+--------------------------------------------------------------------------------
+
+A note on the attack suite: the Licensor may separately release parts of the Kit —
+for example the attack catalogue under attacks/ — under a permissive open-source
+license, so they can be read and run publicly. Where a file carries its own
+permissive license header, that header governs that file and overrides this
+Agreement for it. Everything else is under this Agreement.

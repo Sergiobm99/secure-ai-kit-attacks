@@ -1,0 +1,62 @@
+{
+  "$schema_note": "Hallazgos de auditoria revisados y aceptados A PROPOSITO. Una entrada por hallazgo; sin comodines. Cada entrada lleva su motivo escrito; `line` es informativo y el casado usa escaner + regla + fichero + contexto. Nunca se anade una entrada para que pase una puerta: se anade porque el hallazgo se reviso y el comportamiento es el que se quiere.",
+  "generated": "2026-09-08",
+  "entries": [
+    {
+      "scanner": "security_audit",
+      "rule": "HARDCODED_SECRET",
+      "file": "src/attacks/catalogue.ts",
+      "context": "const SECRET = \"SWORDFISH-42\";",
+      "reason": "No es una credencial: es la CARGA del ataque. El prompt de sistema del kit contiene esta cadena a proposito y las aserciones de fuga comprueban que no salga; moverla a un .env la sacaria del catalogo y dejaria las aserciones sin nada que buscar. Ademas este fichero se copia byte a byte del kit y esa identidad es justo lo que el repositorio publica, asi que cambiar la linea romperia la promesa que el README hace."
+    },
+    {
+      "scanner": "lint_rules",
+      "rule": "DEBUG_LEFTOVER",
+      "file": "src/adapter.ts",
+      "context": "    console.log(`  ${mark[r.verdict]}  ${r.attack.name}  [${r.attack.owasp.join(\", \")}]`);",
+      "reason": "`report()` IMPRIME el informe: console.log es su salida, no una traza olvidada. Es una herramienta de linea de ordenes sin framework, igual que la bateria del kit."
+    },
+    {
+      "scanner": "lint_rules",
+      "rule": "DEBUG_LEFTOVER",
+      "file": "src/adapter.ts",
+      "context": "      console.log(`                ${r.detail}`);",
+      "reason": "El detalle de cada veredicto, con el mismo motivo: es el informe."
+    },
+    {
+      "scanner": "lint_rules",
+      "rule": "DEBUG_LEFTOVER",
+      "file": "src/adapter.ts",
+      "context": "  console.log();",
+      "reason": "La linea en blanco que separa el listado del recuento. Mismo motivo."
+    },
+    {
+      "scanner": "lint_rules",
+      "rule": "DEBUG_LEFTOVER",
+      "file": "src/adapter.ts",
+      "context": "  console.log(",
+      "reason": "El recuento final: «4 attacks - N stopped - N got through - N not measured». Es el resultado."
+    },
+    {
+      "scanner": "lint_rules",
+      "rule": "DEBUG_LEFTOVER",
+      "file": "src/adapter.ts",
+      "context": "    console.log('\"Not measured\" is NOT stopped: your adapter did not produce the signal needed.');",
+      "reason": "La advertencia que impide leer los no medidos como parados. Quitarla es justo el defecto que el fichero existe para no tener."
+    },
+    {
+      "scanner": "lint_rules",
+      "rule": "DEBUG_LEFTOVER",
+      "file": "example.ts",
+      "context": "console.log();",
+      "reason": "El ejemplo es un programa de linea de ordenes cuya salida ES lo que ensena. Mismo motivo que adapter.ts."
+    },
+    {
+      "scanner": "lint_rules",
+      "rule": "DEBUG_LEFTOVER",
+      "file": "example.ts",
+      "context": "console.log(\"This is a FAKE app. Swap it for yours in example.ts and run it again.\");",
+      "reason": "La linea que impide confundir el informe de la app de mentira con un informe real."
+    }
+  ]
+}
