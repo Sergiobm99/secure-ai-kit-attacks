@@ -57,9 +57,25 @@ not an illustration.
 
 | Attack | What lands in the transcript | What stops it on replay |
 |---|---|---|
-| Indirect prompt injection | A retrieved document tells the assistant to email the thread to `a@evil.test`, and it does | **G04**, untrusted-context isolation — the module published in full in this repository |
+| Indirect prompt injection | A retrieved document tells the assistant to email the thread to `a@evil.test`, and it does | **G06** (human in the loop). The observable harm is a tool call, and a tool call is what replay can stop |
 | Tool abuse | The model is talked into calling `delete_records({filter:"*"})` | **G05** (tool allow-list) and **G06** (human in the loop) |
 | Personal data disclosure | Four customer addresses come back in the answer | **G02**, PII redaction, on every channel that reaches the client |
+
+**Read that first row carefully, because it used to be wrong here.** It credited **G04** — the
+isolation module published in full in this repository — with stopping indirect injection on replay.
+It does not, and it cannot: G04 is a **model-behaviour** guardrail. It changes the prompt, and replay
+ignores the prompt and plays the recorded chunks back regardless. Pull `contextIsolation` out of the
+chain, run `npm run attacks`, and that row still says STOPPED — because what stops it is the tool
+gate, at the point of action.
+
+[`src/guardrails/context-isolation.ts`](src/guardrails/context-isolation.ts) has said so in its own
+header from the day it was published; the table contradicted the file it was documenting. Fixed on
+2026-09-09, after an audit caught it.
+
+So, plainly: **the module you get free here is not the thing this replay proves.** G04 is
+demonstrated live and statistically, against a real model — see the caveat above about what replay
+can and cannot show. If that distinction matters to you, it should: it is the difference between a
+guardrail you can verify deterministically and one you have to measure.
 
 ## The bug that made this page necessary
 
