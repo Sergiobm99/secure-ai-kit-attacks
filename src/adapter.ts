@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // src/adapter.ts — point these attacks at YOUR application.
 //
 // This file is the only thing here that does not come from the kit. The kit has its own harness,

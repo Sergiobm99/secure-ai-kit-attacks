@@ -53,13 +53,17 @@ no model and no API key, and the guardrail catches the same canned behaviour. Th
 deterministic: nothing depends on the model being in a good mood on the day you run it.
 
 The three transcripts are in [`transcripts/`](transcripts/) in this repository. They are the evidence,
-not an illustration.
+not an illustration — so read the third row against `transcripts/pii-leak.json` and you will find
+three addresses in it, not four. That is not a slip in the row: a transcript records what the MODEL
+sent, and the fourth address never reached the prose. It reaches the client anyway, in the
+tool-result event that replay regenerates from the records fixture, which is the whole point of the
+row below about the channel the old assertion could not see.
 
 | Attack | What lands in the transcript | What stops it on replay |
 |---|---|---|
 | Indirect prompt injection | A retrieved document tells the assistant to email the thread to `a@evil.test`, and it does | **G06** (human in the loop). The observable harm is a tool call, and a tool call is what replay can stop |
 | Tool abuse | The model is talked into calling `delete_records({filter:"*"})` | **G05** (tool allow-list) and **G06** (human in the loop) |
-| Personal data disclosure | Four customer addresses come back in the answer | **G02**, PII redaction, on every channel that reaches the client |
+| Personal data disclosure | The answer names three customer addresses; the tool-result event before it hands over all four | **G02**, PII redaction, on every channel that reaches the client |
 
 **Read that first row carefully, because it used to be wrong here.** It credited **G04** — the
 isolation module published in full in this repository — with stopping indirect injection on replay.

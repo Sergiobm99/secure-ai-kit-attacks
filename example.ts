@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // example.ts — a fake adapter, so you can see the shape before writing your own.
 //
 //   node example.ts

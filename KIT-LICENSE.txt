@@ -138,6 +138,17 @@ DEFINITIONS
 
 A note on the attack suite: the Licensor may separately release parts of the Kit —
 for example the attack catalogue under attacks/ — under a permissive open-source
-license, so they can be read and run publicly. Where a file carries its own
-permissive license header, that header governs that file and overrides this
-Agreement for it. Everything else is under this Agreement.
+license, so they can be read and run publicly. Two things put a file on that side
+of the line, and either one is enough:
+
+  1. The file carries its own permissive license header, which governs that file
+     and overrides this Agreement for it; or
+
+  2. The file is published by the Licensor in the public repository
+     github.com/Sergiobm99/secure-ai-kit-attacks, under the MIT license that
+     repository's LICENSE file grants. This covers the recorded transcripts,
+     which are JSON and therefore cannot carry a header at all — naming them
+     only in a header that cannot exist would leave them under two licenses with
+     nothing to resolve the conflict.
+
+Everything else is under this Agreement.

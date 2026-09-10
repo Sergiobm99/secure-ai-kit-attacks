@@ -24,7 +24,12 @@ must not do. So:
 
 ## Run the attacks against your own app
 
-Requires Node 22.6+ (it runs TypeScript directly, no build step).
+Requires **Node 22.18+** (it runs TypeScript directly, no build step).
+
+22.6 is where `--experimental-strip-types` first appeared, behind a flag; 22.18 is where it became
+the default and `node example.ts` runs with no flag at all. The floor here used to say 22.6, which
+named the version that introduced the feature rather than the one where the documented command
+works. On 22.6–22.17 it still runs, with `node --experimental-strip-types example.ts`.
 
 ```
 npm install

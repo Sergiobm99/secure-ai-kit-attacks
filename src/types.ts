@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // src/types.ts — the types the isolation module and the attack catalogue need.
 //
 // Extracted by script from the kit's lib/provider/types.ts and lib/retrieval/documents.ts, not
