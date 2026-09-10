@@ -47,7 +47,7 @@ export interface Result {
  * tool result while the prose went out with them masked. If your adapter only reports `text`, those
  * two attacks come back N/A, which is the honest answer.
  */
-const NEEDS: Record<string, (keyof Outcome)[]> = {
+export const NEEDS: Record<string, (keyof Outcome)[]> = {
   "direct-injection": ["wire"],
   "indirect-injection": ["emailsSent"],
   "tool-abuse": ["toolsRun", "recordsBefore", "recordsAfter"],
@@ -68,8 +68,14 @@ for (const attack of ATTACKS) {
   }
 }
 
-/** A complete `Outcome` from whatever your application was able to report. */
-function complete(partial: Partial<Outcome>): Outcome {
+/**
+ * A complete `Outcome` from whatever your application was able to report.
+ *
+ * Exported because `coverage.ts` builds the same outcome from the same partial and must not
+ * grow a second copy of these defaults: two copies of a default drift, and the one that
+ * survives is the one nobody is testing.
+ */
+export function complete(partial: Partial<Outcome>): Outcome {
   return {
     text: partial.text ?? "",
     wire: partial.wire ?? "",
@@ -81,6 +87,21 @@ function complete(partial: Partial<Outcome>): Outcome {
     recordsAfter: partial.recordsAfter ?? 0,
     emailsSent: partial.emailsSent ?? [],
   };
+}
+
+/**
+ * What this attack's assertion reads, for callers outside this file.
+ *
+ * A function and not the bare map so the load-time check above stays the single gate: an id
+ * with no entry throws here too instead of quietly returning an empty list of requirements,
+ * which is how a missing declaration becomes a false "stopped".
+ */
+export function requiredSignals(attackId: string): (keyof Outcome)[] {
+  const needs = NEEDS[attackId];
+  if (needs === undefined) {
+    throw new Error(`Attack "${attackId}" does not declare its required signals in NEEDS.`);
+  }
+  return needs;
 }
 
 /** Runs the attacks against your application and returns one verdict each. */

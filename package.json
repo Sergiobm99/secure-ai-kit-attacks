@@ -6,7 +6,9 @@
   "private": false,
   "scripts": {
     "example": "node example.ts",
-    "typecheck": "tsc --noEmit"
+    "coverage": "node example-coverage.ts",
+    "typecheck": "tsc --noEmit",
+    "check": "tsc --noEmit && node src/coverage.test.ts && node example-coverage.ts"
   },
   "devDependencies": {
     "@types/node": "^26.5.0",

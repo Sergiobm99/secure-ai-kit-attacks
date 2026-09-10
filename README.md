@@ -33,8 +33,12 @@ works. On 22.6–22.17 it still runs, with `node --experimental-strip-types exam
 
 ```
 npm install
-node example.ts
+node example.ts        # the attacks against a fake app, to see the shape of a report
+node example-coverage.ts   # which of that app's controls actually hold, proved by removing them
 ```
+
+[**ADAPTING.md**](ADAPTING.md) is the page for pointing this at your own application: what to
+report, what each attack needs, and how a control gets proved instead of listed.
 
 `example.ts` ships a fake application so you can see the shape of a report before writing anything.
 Replace it with yours:
@@ -91,7 +95,7 @@ that carried the payload. If your adapter reports only `text`, those two attacks
 
 The harness is not withheld to tease: it is bolted to the kit's own agent, and publishing it would
 mean publishing the kit. The adapter here does the useful half — pointing the attacks at *your*
-application — and it is 162 lines you can read.
+application — and it is 183 lines you can read.
 
 ## The licence
 
