@@ -15,7 +15,7 @@
 // value of the suite: a harness that swallows its own failures prints a clean page for an
 // application nobody tested.
 import type { Outcome } from "./attacks/catalogue.ts";
-import type { YourApp } from "./adapter.ts";
+import { reported, type YourApp } from "./adapter.ts";
 
 export interface HttpAppOptions {
   /** Where your testing endpoint lives. */
@@ -53,27 +53,49 @@ export function httpApp(options: HttpAppOptions): YourApp {
   const { url, timeoutMs = 30_000, headers = {} } = options;
 
   return async ({ turns, plantedDocument }) => {
+    // THE CLOCK COVERS THE BODY TOO, and it did not.
+    //
+    // `fetch` resolves as soon as the HEADERS arrive. Clearing the alarm there left
+    // `response.json()` — the part where the time actually goes — with no timeout at all: a server
+    // that sent `200` and a JSON prefix and then never finished hung the run FOREVER, with no
+    // verdict. That is the ordinary shape of a streaming response or a proxy that flushes headers
+    // early, so `timeoutMs` bought exactly nothing for the slow-but-correct application it exists
+    // for. Found by the detached review of 2026-09-10.
     const control = new AbortController();
     const alarm = setTimeout(() => control.abort(), timeoutMs);
 
-    let response: Response;
     try {
-      response = await fetch(url, {
-        method: "POST",
-        headers: { "content-type": "application/json", ...headers },
-        body: JSON.stringify({ turns, plantedDocument }),
-        signal: control.signal,
-      });
-    } catch (e) {
-      throw new HttpAdapterError(
-        control.signal.aborted
-          ? `no answer in ${timeoutMs}ms. A hung application is an ERROR, not a defence.`
-          : `could not reach ${url}: ${e instanceof Error ? e.message : String(e)}`,
-      );
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json", ...headers },
+          body: JSON.stringify({ turns, plantedDocument }),
+          signal: control.signal,
+        });
+      } catch (e) {
+        throw new HttpAdapterError(
+          control.signal.aborted
+            ? `no answer in ${timeoutMs}ms. A hung application is an ERROR, not a defence.`
+            : `could not reach ${url}: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+
+      return await leerCuerpo(response, url, timeoutMs, control);
     } finally {
       clearTimeout(alarm);
     }
+  };
+}
 
+/** Reads and validates the body, with the same clock still running over it. */
+async function leerCuerpo(
+  response: Response,
+  url: string,
+  timeoutMs: number,
+  control: AbortController,
+): Promise<Partial<Outcome>> {
+  {
     if (!response.ok) {
       // Deliberately NOT treated as "the app refused the attack". A 403 from your framework and a
       // guardrail deciding to refuse look identical from out here, and calling that "stopped" is
@@ -85,9 +107,25 @@ export function httpApp(options: HttpAppOptions): YourApp {
       );
     }
 
+    // The two ways of not getting a body are DIFFERENT, and saying so is not pedantry: one sends
+    // you to your serialiser and the other to your network. A socket that died mid-body was
+    // reported as "not JSON", which is a debugging afternoon spent in the wrong file.
+    let crudo: string;
+    try {
+      crudo = await response.text();
+    } catch (e) {
+      throw new HttpAdapterError(
+        control.signal.aborted
+          ? `${url} answered 200 and then took longer than ${timeoutMs}ms to finish the body. ` +
+            `A body that never arrives is an ERROR, not a defence.`
+          : `${url} answered 200 and the connection died before the body finished: ` +
+            `${e instanceof Error ? e.message : String(e)}. That is the network, not your JSON.`,
+      );
+    }
+
     let body: unknown;
     try {
-      body = await response.json();
+      body = JSON.parse(crudo);
     } catch {
       throw new HttpAdapterError(`${url} answered 200 with a body that is not JSON.`);
     }
@@ -99,11 +137,14 @@ export function httpApp(options: HttpAppOptions): YourApp {
     // difference between "no tool ran" and "I did not look at whether a tool ran".
     const partial: Partial<Outcome> = {};
     for (const field of FIELDS) {
+      // `reported()` and not `!== undefined`: JSON cannot express `undefined`, so a backend that
+      // did not measure something says `null`. Copying that across let it past the missing-field
+      // gate and get defaulted into a clean sheet. See `reported()` in adapter.ts.
       const value = (body as Record<string, unknown>)[field];
-      if (value !== undefined) {
+      if (reported(value)) {
         (partial as Record<string, unknown>)[field] = value;
       }
     }
     return partial;
-  };
+  }
 }

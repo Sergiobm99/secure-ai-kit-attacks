@@ -17,11 +17,23 @@
 //   demonstratedBy  which attacks, by id — the evidence, not the assertion
 //   why             when it could not be demonstrated: the reason, in words
 //
+// TWO THINGS THIS CANNOT KNOW, said here because a reader will otherwise assume it does.
+//
+// It cannot check BLAST RADIUS. `without(control)` is your function, and if switching off your audit
+// logging also switches off your mail gate — the normal shape of a one-flag rebuild — this file sees
+// an attack that got through and writes `demonstrated: true` next to the wrong name. All it can
+// check is that you handed back a different application at all. Keep `without()` surgical.
+//
+// It cannot see STOCHASTICITY. Each attack runs once per configuration. Against the recorded
+// transcripts that is exact; against a live model it is a single paired sample, and one lucky
+// pairing can write `demonstrated: true` into a baseline that then keeps it there. Re-run before you
+// commit a baseline taken against a live model.
+//
 // `demonstrated: false` IS NOT A FAILING GRADE. Some controls change what a model does rather than
 // what your code does, and a deterministic replay ignores the prompt: it cannot prove them, and
 // saying so is more useful than pretending. What it must never do is report them as proved.
 import { ATTACKS, type Attack, type Outcome } from "./attacks/catalogue.ts";
-import { complete, requiredSignals, type Verdict, type YourApp } from "./adapter.ts";
+import { complete, reported, requiredSignals, type Verdict, type YourApp } from "./adapter.ts";
 
 /**
  * Your application, plus the two things this file needs that a bare function cannot express.
@@ -72,7 +84,7 @@ async function verdictFor(app: YourApp, attack: Attack): Promise<{ verdict: Verd
     return { verdict: "error", detail: `your application threw: ${e instanceof Error ? e.message : String(e)}` };
   }
 
-  const missing = requiredSignals(attack.id).filter((field) => partial[field] === undefined);
+  const missing = requiredSignals(attack.id).filter((field) => !reported(partial[field]));
   if (missing.length > 0) {
     return {
       verdict: "not-applicable",
@@ -82,10 +94,21 @@ async function verdictFor(app: YourApp, attack: Attack): Promise<{ verdict: Verd
     };
   }
 
-  const outcome = complete(partial);
-  return attack.holds(outcome)
-    ? { verdict: "stopped", detail: "" }
-    : { verdict: "got-through", detail: attack.explain(outcome) };
+  // Judging is inside the guard too: an assertion reads the shape it was promised, and a field
+  // reported with the wrong type made it throw out of the whole run. Same fix as `adapter.ts`.
+  try {
+    const outcome = complete(partial);
+    return attack.holds(outcome)
+      ? { verdict: "stopped", detail: "" }
+      : { verdict: "got-through", detail: attack.explain(outcome) };
+  } catch (e) {
+    return {
+      verdict: "error",
+      detail:
+        `this attack could not be judged: ${e instanceof Error ? e.message : String(e)}. Usually a ` +
+        `field reported with the wrong shape — see ADAPTING.md section 2.`,
+    };
+  }
 }
 
 /**
@@ -101,9 +124,89 @@ export async function measure(app: ControlledApp, subject: string, attacks: Atta
     base.set(attack.id, await verdictFor(app.run, attack));
   }
 
+  // WAS ANYTHING ACTUALLY MEASURED? Without this, an application that was unreachable for the
+  // whole run — wrong port in CI, container not up, test flag off — produced "no attack changes its
+  // verdict when this control is removed" for every control. Every clause of that sentence was
+  // false: nothing ran. And because the baseline comparison then saw controls that used to be
+  // demonstrated and no longer were, CI called a downed endpoint a security regression. Found by
+  // the detached review of 2026-09-10.
+  const evaluables = attacks.filter((a) => base.get(a.id)!.verdict === "stopped").length;
+  const nadaQueMedir =
+    evaluables === 0
+      ? `no attack in this run reached a verdict this control could change: ` +
+        attacks.map((a) => `${a.id}=${base.get(a.id)!.verdict}`).join(", ") +
+        `. Nothing was measured, so nothing here says anything about your controls. Fix that first.`
+      : null;
+
   const controls: ControlCoverage[] = [];
+  const vistos = new Set<string>();
+
   for (const control of app.controls) {
-    const without = app.without(control);
+    // A name that is blank, or repeated, is a mistake worth naming rather than a control worth
+    // testing: a duplicate runs the whole attack sweep twice — real money against a live model —
+    // and prints the same line twice as if it were two findings.
+    if (control.trim() === "") {
+      controls.push({
+        control,
+        declared: false,
+        demonstrated: false,
+        demonstratedBy: [],
+        why: "this control has no name. Nothing was run for it.",
+      });
+      continue;
+    }
+    if (vistos.has(control)) {
+      controls.push({
+        control,
+        declared: true,
+        demonstrated: false,
+        demonstratedBy: [],
+        why: `"${control}" is listed more than once. Only the first entry was run.`,
+      });
+      continue;
+    }
+    vistos.add(control);
+
+    // `without()` may throw instead of returning null — ADAPTING.md tells you to write
+    // `buildMyApp({ disable: control })`, and a builder that validates its argument throws on a name
+    // it does not know. That used to destroy the entire run, baseline included.
+    let without: YourApp | null;
+    try {
+      without = app.without(control);
+    } catch (e) {
+      controls.push({
+        control,
+        declared: true,
+        demonstrated: false,
+        demonstratedBy: [],
+        why:
+          `your without() threw for this control: ${e instanceof Error ? e.message : String(e)}. ` +
+          `Return null instead when you cannot build the app without it — that is a legitimate ` +
+          `answer and it does not lose the rest of the run.`,
+      });
+      continue;
+    }
+
+    // Nothing was removed. The common cause is a typo in the name, and reading "your control is not
+    // load-bearing" when the truth is "you misspelled it" is the worst answer this file can give.
+    if (without === app.run) {
+      controls.push({
+        control,
+        declared: true,
+        demonstrated: false,
+        demonstratedBy: [],
+        why:
+          `without("${control}") handed back the same application. Nothing was removed, so nothing ` +
+          `was tested. Check the spelling of the name against what without() expects.`,
+      });
+      continue;
+    }
+
+    if (nadaQueMedir !== null) {
+      controls.push({ control, declared: true, demonstrated: false, demonstratedBy: [], why: nadaQueMedir });
+      continue;
+    }
+
     if (without === null) {
       controls.push({
         control,
@@ -154,7 +257,20 @@ export async function measure(app: ControlledApp, subject: string, attacks: Atta
 
 /** The report, for people. No totals: see the header. */
 export function reportCoverage(coverage: Coverage): void {
-  console.log(`Control coverage — ${coverage.subject}\n`);
+  // THE ATTACK VERDICTS GO FIRST, and they were not printed at all.
+  //
+  // Without them the page answered "are your controls load-bearing?" and silently dropped "did
+  // these attacks get through?" — so an application that started leaking read as a clean control
+  // report, and an application that was simply unreachable read the same as one whose controls are
+  // theatre. The controls section means nothing until you have read this one.
+  console.log(`Attacks — ${coverage.subject}\n`);
+  for (const a of coverage.attacks) {
+    const mark = { stopped: "STOPPED    ", "got-through": "GOT THROUGH", "not-applicable": "N/A        ", error: "ERROR      " }[a.verdict];
+    console.log(`  ${mark}  ${a.name}`);
+    if (a.detail !== "") console.log(`                ${a.detail}`);
+  }
+
+  console.log(`\nControl coverage — ${coverage.subject}\n`);
   for (const c of coverage.controls) {
     if (c.demonstrated) {
       console.log(`  DEMONSTRATED   ${c.control}`);
@@ -170,6 +286,17 @@ export function reportCoverage(coverage: Coverage): void {
 }
 
 /**
+ * Exit code for a coverage run. 1 if any attack got through or could not be run.
+ *
+ * This exists because it was MISSING, and its absence was a trap: a developer who followed the docs
+ * from `runAttacks`/`exitCode` to `measure`/`compareToBaseline` silently lost the got-through gate.
+ * Their build went green while an attack was landing. Found by the detached review of 2026-09-10.
+ */
+export function coverageExitCode(coverage: Coverage): number {
+  return coverage.attacks.some((a) => a.verdict === "got-through" || a.verdict === "error") ? 1 : 0;
+}
+
+/**
  * Compares a run against the committed baseline. Exit code, not a judgement.
  *
  * BOTH DIRECTIONS FAIL, and the second one is the interesting half. A control that stops being
@@ -181,6 +308,23 @@ export function reportCoverage(coverage: Coverage): void {
 export function compareToBaseline(baseline: Coverage, now: Coverage): string[] {
   const before = new Map(baseline.controls.map((c) => [c.control, c]));
   const problems: string[] = [];
+
+  // A RUN THAT MEASURED NOTHING IS NOT A REGRESSION, and saying it is trains people to ignore this.
+  //
+  // With the application unreachable — wrong port in CI, container not up, the test flag off —
+  // every attack errors, every control comes back not-demonstrated, and the comparison below
+  // dutifully reported each one as "WAS demonstrated and is not any more". A downed endpoint read
+  // exactly like your defences collapsing. It still fails the build, and it should; what changes is
+  // that it says the true thing. Found by the detached review of 2026-09-10.
+  const medidos = now.attacks.filter((a) => a.verdict === "stopped" || a.verdict === "got-through");
+  if (now.attacks.length > 0 && medidos.length === 0) {
+    return [
+      `nothing was measured in this run: ` +
+        now.attacks.map((a) => `${a.id}=${a.verdict}`).join(", ") +
+        `. This is NOT a security regression — your application did not answer. Fix that and run ` +
+        `again before reading anything else here.`,
+    ];
+  }
 
   for (const c of now.controls) {
     const a = before.get(c.control);
@@ -205,6 +349,34 @@ export function compareToBaseline(baseline: Coverage, now: Coverage): string[] {
   for (const a of baseline.controls) {
     if (!now.controls.some((c) => c.control === a.control)) {
       problems.push(`${a.control}: in the baseline and gone from this run. Was it removed on purpose?`);
+    }
+  }
+
+  // AND THE ATTACKS. This half was missing entirely, which made the whole comparison a decoration:
+  // an attack that went from stopped to got-through — the actual regression anyone cares about —
+  // changed nothing here and the build stayed green.
+  const antesAtaques = new Map(baseline.attacks.map((a) => [a.id, a]));
+  for (const a of now.attacks) {
+    const previo = antesAtaques.get(a.id);
+    if (previo === undefined) {
+      problems.push(`${a.id}: attack not in the baseline. Add it in the same commit that adds it.`);
+      continue;
+    }
+    if (previo.verdict === "stopped" && a.verdict !== "stopped") {
+      problems.push(
+        `${a.id}: WAS stopped and is now ${a.verdict}. ${a.detail || "That is the regression this file exists to catch."}`,
+      );
+    }
+    if (previo.verdict !== "stopped" && a.verdict === "stopped") {
+      problems.push(
+        `${a.id}: is stopped now and was ${previo.verdict} in the baseline. If a change earned that, ` +
+          `update the baseline in the SAME commit. A door that closed and nobody claimed is luck.`,
+      );
+    }
+  }
+  for (const a of baseline.attacks) {
+    if (!now.attacks.some((x) => x.id === a.id)) {
+      problems.push(`${a.id}: in the baseline and not in this run. The baseline describes a world that is gone.`);
     }
   }
 

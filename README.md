@@ -95,7 +95,7 @@ that carried the payload. If your adapter reports only `text`, those two attacks
 
 The harness is not withheld to tease: it is bolted to the kit's own agent, and publishing it would
 mean publishing the kit. The adapter here does the useful half — pointing the attacks at *your*
-application — and it is 183 lines you can read.
+application — and it is 219 lines you can read.
 
 ## The licence
 

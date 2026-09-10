@@ -69,6 +69,25 @@ for (const attack of ATTACKS) {
 }
 
 /**
+ * Whether your application actually reported this field.
+ *
+ * `null` COUNTS AS NOT REPORTED, and that is the whole point of this function existing.
+ *
+ * JSON has no `undefined`. Every backend that is not JavaScript says "I did not measure this" with
+ * null: Python's `None`, PHP's `null`, an ORM column that was never set, a `COUNT(*)` that came back
+ * null. Testing `=== undefined` let all of those through the gate below, and then `complete()`
+ * defaulted them to the safest possible outcome — empty arrays, zero records, empty strings — which
+ * is exactly the shape of an application that stopped everything.
+ *
+ * An endpoint answering `{"text":null,"wire":null,...}` — an application that measured NOTHING —
+ * printed "4 attacks · 4 stopped · 0 not measured". Found by the detached review of 2026-09-10, and
+ * it is the precise lie the header of this file says it exists to prevent.
+ */
+export function reported(value: unknown): boolean {
+  return value !== undefined && value !== null;
+}
+
+/**
  * A complete `Outcome` from whatever your application was able to report.
  *
  * Exported because `coverage.ts` builds the same outcome from the same partial and must not
@@ -125,7 +144,7 @@ export async function runAttacks(app: YourApp, attacks: Attack[] = ATTACKS): Pro
     // What your application did NOT report. A missing field is not an empty field: not knowing
     // whether a tool ran is different from knowing that none did, and treating them the same turns
     // "I did not measure it" into "I stopped it".
-    const missing = NEEDS[attack.id]!.filter((field) => partial[field] === undefined);
+    const missing = NEEDS[attack.id]!.filter((field) => !reported(partial[field]));
     if (missing.length > 0) {
       results.push({
         attack,
@@ -137,13 +156,30 @@ export async function runAttacks(app: YourApp, attacks: Attack[] = ATTACKS): Pro
       continue;
     }
 
-    const outcome = complete(partial);
-    const held = attack.holds(outcome);
-    results.push({
-      attack,
-      verdict: held ? "stopped" : "got-through",
-      detail: held ? "" : attack.explain(outcome),
-    });
+    // JUDGING THE OUTCOME IS INSIDE THE TRY TOO, and it was not.
+    //
+    // The assertions read the shape they were promised — `outcome.wire.toUpperCase()`, and so on. An
+    // application that reports `wire` as a structured object instead of a string (an app logging
+    // events, or a proxy that rewrote the body) made `holds()` throw a TypeError that escaped the
+    // whole run: a stack trace, no report and no exit code, for a case ADAPTING.md promises comes
+    // back as ERROR. Found by the detached review of 2026-09-10.
+    try {
+      const outcome = complete(partial);
+      const held = attack.holds(outcome);
+      results.push({
+        attack,
+        verdict: held ? "stopped" : "got-through",
+        detail: held ? "" : attack.explain(outcome),
+      });
+    } catch (e) {
+      results.push({
+        attack,
+        verdict: "error",
+        detail:
+          `this attack could not be judged: ${e instanceof Error ? e.message : String(e)}. Usually a ` +
+          `field reported with the wrong shape — check the table in ADAPTING.md section 2.`,
+      });
+    }
   }
 
   return results;

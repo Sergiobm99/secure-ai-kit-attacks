@@ -12,7 +12,14 @@
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { runAttacks, type Result } from "./adapter.ts";
-import { compareToBaseline, measure, reportCoverage, type ControlledApp, type Coverage } from "./coverage.ts";
+import {
+  compareToBaseline,
+  coverageExitCode,
+  measure,
+  reportCoverage,
+  type ControlledApp,
+  type Coverage,
+} from "./coverage.ts";
 import { httpApp } from "./http-adapter.ts";
 import type { Outcome } from "./attacks/catalogue.ts";
 
@@ -124,11 +131,31 @@ async function conServidor(
   try {
     await probar(`http://127.0.0.1:${port}/`);
   } finally {
+    // A la fuerza: alguno de estos casos deja una conexion abierta a proposito, y `close()` sola
+    // espera a que se cierren — colgando el final de la suite en vez del caso.
+    server.closeAllConnections();
     await new Promise<void>((ok) => server.close(() => ok()));
   }
 }
 
 const veredictos = (r: Result[]): string[] => r.map((x) => x.verdict);
+
+/**
+ * Espera una promesa con un limite PROPIO, y devuelve null si no vuelve a tiempo.
+ *
+ * Sin esto, la guarda de «el reloj cubre el cuerpo» se cuelga en vez de fallar cuando el arreglo no
+ * esta: la promesa no se resuelve nunca y la suite se queda ahi. Una comprobacion que no puede
+ * ponerse roja no comprueba nada.
+ */
+async function conLimite<T>(promesa: Promise<T>, ms: number): Promise<T | null> {
+  let reloj: ReturnType<typeof setTimeout> | undefined;
+  const limite = new Promise<null>((ok) => {
+    reloj = setTimeout(() => ok(null), ms);
+  });
+  const r = await Promise.race([promesa, limite]);
+  if (reloj !== undefined) clearTimeout(reloj);
+  return r as T | null;
+}
 
 await conServidor(
   (_req, res) => {
@@ -179,6 +206,165 @@ await conServidor(
     const r = await runAttacks(httpApp({ url, timeoutMs: 150 }));
     check(veredictos(r).every((v) => v === "error"), "an application that hangs is an ERROR");
     check(r[0]!.detail.includes("not a defence"), "and the reason says a hung app is not a defence");
+  },
+);
+
+// ===================================================================================================
+// THE DETACHED REVIEW OF 2026-09-10. Eleven findings against the first version of this file; these
+// are their guards. Each one is a sentence that was FALSE the day it was written.
+
+// --- 1 · `null` is not a reported value (CRITICAL)
+// JSON has no `undefined`. An endpoint answering all-null — an application that measured nothing —
+// printed "4 attacks · 4 stopped · 0 not measured".
+await conServidor(
+  (_req, res) => {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        text: null, wire: null, toolCalls: null, toolsRun: null, toolsBlocked: null,
+        retrieved: null, recordsBefore: null, recordsAfter: null, emailsSent: null,
+      }),
+    );
+  },
+  async (url) => {
+    const r = await runAttacks(httpApp({ url }));
+    check(!veredictos(r).includes("stopped"), "an app that reports every field as null stops NOTHING");
+    check(veredictos(r).every((v) => v === "not-applicable"), "every attack comes back N/A instead");
+  },
+);
+
+// --- 2 · the attack verdicts are printed AND compared (CRITICAL)
+const conFuga: Coverage = JSON.parse(JSON.stringify(coverage)) as Coverage;
+conFuga.attacks.find((a) => a.id === "pii-leak")!.verdict = "got-through";
+conFuga.attacks.find((a) => a.id === "pii-leak")!.detail = "the answer disclosed customer addresses";
+
+const regresionAtaque = compareToBaseline(coverage, conFuga);
+check(
+  regresionAtaque.some((p) => p.includes("pii-leak") && p.includes("WAS stopped")),
+  "an attack that goes from stopped to got-through IS reported: that is the regression anyone cares about",
+);
+check(coverageExitCode(conFuga) === 1, "and the exit code fails, so a coverage run cannot go green while an attack lands");
+check(coverageExitCode(coverage) === 0, "while a clean run passes");
+
+const impreso: string[] = [];
+const real2 = console.log;
+console.log = (...a: unknown[]) => void impreso.push(a.join(" "));
+reportCoverage(conFuga);
+console.log = real2;
+check(
+  impreso.join("\n").includes("GOT THROUGH"),
+  "and the printed report SHOWS it: the control section means nothing until you have read the attacks",
+);
+
+// --- 3 · a run that measured nothing is not a regression (HIGH)
+const caido: ControlledApp = {
+  run: () => {
+    throw new Error("ECONNREFUSED");
+  },
+  controls: ["emailGate"],
+  without: () => () => {
+    throw new Error("ECONNREFUSED");
+  },
+};
+const nadaMedido = await measure(caido, "unreachable app");
+check(
+  (nadaMedido.controls[0]!.why ?? "").includes("Nothing was measured"),
+  "with the app unreachable, the reason says nothing was measured — not that your control is theatre",
+);
+const veredictoCaido = compareToBaseline(coverage, nadaMedido);
+check(
+  veredictoCaido.length === 1 && veredictoCaido[0]!.includes("NOT a security regression"),
+  "and CI says so, instead of reporting a downed endpoint as your defences collapsing",
+);
+check(coverageExitCode(nadaMedido) === 1, "while still failing the build, because nothing was proved");
+
+// --- 4 · the clock covers the body (HIGH)
+await conServidor(
+  (_req, res) => {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.write('{"text":"hi"');
+    // and never finishes.
+  },
+  async (url) => {
+    const r = await conLimite(runAttacks(httpApp({ url, timeoutMs: 200 })), 8_000);
+    check(r !== null, "a body that never finishes gives up on time instead of hanging for ever");
+    check(r !== null && veredictos(r).every((v) => v === "error"), "and every attack is an ERROR");
+  },
+);
+
+// --- 5 · a wrong-shaped field is an ERROR, not a crash (HIGH)
+await conServidor(
+  (_req, res) => {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ text: "hi", wire: { blocks: ["hi"] }, toolsRun: [], recordsBefore: 1, recordsAfter: 1, emailsSent: [] }));
+  },
+  async (url) => {
+    let r: Result[] | null = null;
+    try {
+      r = await runAttacks(httpApp({ url }));
+    } catch {
+      r = null;
+    }
+    check(r !== null, "a field with the wrong shape does not blow up the run");
+    check((r ?? []).some((x) => x.verdict === "error"), "it comes back as an ERROR");
+    check(
+      (r ?? []).some((x) => x.detail.includes("wrong shape")),
+      "and the reason points at ADAPTING.md instead of at a stack trace",
+    );
+  },
+);
+
+// --- 6 · a without() that throws costs one control, not the run (MEDIUM)
+const revienta: ControlledApp = {
+  run: toy(true),
+  controls: ["emailGate", "promptHardening"],
+  without: (c) => {
+    if (c === "emailGate") return toy(false);
+    throw new Error("cannot build an app without prompt hardening");
+  },
+};
+const conThrow = await measure(revienta, "throwing app");
+check(conThrow.controls.length === 2, "a without() that throws does not lose the rest of the run");
+check(conThrow.controls.find((c) => c.control === "emailGate")!.demonstrated, "the other control is still measured");
+check(
+  (conThrow.controls.find((c) => c.control === "promptHardening")!.why ?? "").includes("Return null instead"),
+  "and the one that threw says what to do instead",
+);
+
+// --- 8 · a typo is a typo, not a control that does nothing (MEDIUM)
+// `toy(true)` builds a NEW function each call, so the identity check needs the same reference back.
+const mismaApp = toy(true);
+const conErrataReal: ControlledApp = {
+  run: mismaApp,
+  controls: ["emailgate", "", "emailGate", "emailGate"],
+  without: (c) => (c === "emailGate" ? toy(false) : mismaApp),
+};
+const errata = await measure(conErrataReal, "typo app");
+check(
+  (errata.controls.find((c) => c.control === "emailgate")!.why ?? "").includes("Check the spelling"),
+  "a misspelled control says so, instead of reading as a control that is not load-bearing",
+);
+check(
+  (errata.controls.find((c) => c.control === "")!.why ?? "").includes("no name"),
+  "a blank name says so instead of printing an empty line",
+);
+const repetidos = errata.controls.filter((c) => c.control === "emailGate");
+check(repetidos.length === 2 && (repetidos[1]!.why ?? "").includes("more than once"), "and a duplicate is named as a duplicate");
+
+// --- 9 · a dead socket is the network, not your JSON (LOW)
+await conServidor(
+  (_req, res) => {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.write('{"text":"hi"');
+    setTimeout(() => res.socket?.destroy(), 60);
+  },
+  async (url) => {
+    const r = await runAttacks(httpApp({ url, timeoutMs: 5_000 }));
+    check(veredictos(r).every((v) => v === "error"), "a socket that dies mid-body is an ERROR");
+    check(
+      r[0]!.detail.includes("the network, not your JSON"),
+      "and the reason sends you to the network instead of to your serialiser",
+    );
   },
 );
 

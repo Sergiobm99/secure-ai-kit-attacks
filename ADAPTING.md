@@ -99,23 +99,60 @@ made once: the kit's README said its suite proved nine guardrails, and pulling t
 at a time showed that **two** of them changed any outcome. A total would have hidden that. A list of
 what was actually demonstrated could not.
 
+To be exact about what that promise covers, because "no numbers anywhere" would be false: the attack
+report in section 5 prints a tally — `4 attacks · 3 stopped · 1 not measured`. That is a count of
+what ran, and each line of it is above it on the screen. What does not exist, and will not, is a
+figure that stands in for your security: no percentage, no rating, no level, nothing you could put
+on a badge.
+
 **`demonstrated: false` is not a failing grade.** A control that changes what the *model* does —
 prompt framing, context isolation — cannot be proved by a deterministic replay, because a replay
 ignores the prompt. The report says that instead of guessing in either direction.
 
 Returning `null` from `without()` is a legitimate answer. You then get `demonstrated: false` with the
-reason, which is more useful than a number that pretends otherwise.
+reason, which is more useful than a number that pretends otherwise. Returning the **same** app is
+not: the report will tell you nothing was removed, which is almost always a misspelled control name.
+
+### Two things this cannot know, and you have to
+
+**Blast radius.** `without()` is your function. If switching off your audit logging also switches off
+your mail gate — the ordinary shape of a one-flag rebuild — an attack gets through and
+`demonstrated: true` lands next to the *wrong* name. All this can check is that you handed back a
+different application at all. **Keep `without()` surgical**, one control at a time, or the evidence
+is attached to the wrong control and reads as proof.
+
+**Stochasticity.** Each attack runs once per configuration. Against recorded transcripts that is
+exact. Against a live model it is a single paired sample, and one lucky pairing writes
+`demonstrated: true` into a baseline that then keeps it there for good. Re-run before committing a
+baseline taken against a live model.
+
+And the cost, said plainly: `measure()` is `(controls + 1) × attacks` runs of your application. Free
+against a replay. Real money against a live model — and a control listed twice pays twice.
 
 ## 4 · In CI
 
-`measure()` gives you a plain object. Write it next to your code as `secure-ai-coverage.json`, commit
-it, and compare on every run:
+`measure()` gives you a plain object. Write **the whole object** next to your code as
+`secure-ai-coverage.json` — controls *and* attacks — commit it, and compare on every run:
 
 ```ts
-import { compareToBaseline } from "./src/coverage.ts";
-const problems = compareToBaseline(baseline, await measure(app, "my app"));
-if (problems.length > 0) { problems.forEach((p) => console.error(p)); process.exit(1); }
+import { compareToBaseline, coverageExitCode, measure, reportCoverage } from "./src/coverage.ts";
+
+const coverage = await measure(app, "my app");
+reportCoverage(coverage);
+
+const problems = compareToBaseline(baseline, coverage);
+problems.forEach((p) => console.error(p));
+
+// BOTH gates. The first is "did an attack get through TODAY", the second is "did anything change
+// since the baseline". They answer different questions and you want to fail on either.
+process.exit(problems.length > 0 || coverageExitCode(coverage) !== 0 ? 1 : 0);
 ```
+
+**Do not drop `coverageExitCode`.** Moving from `runAttacks`/`exitCode` in section 1 to
+`measure`/`compareToBaseline` here used to lose the got-through gate silently: your build went green
+while an attack was landing, because the comparison only looked at controls. If you save only
+`{subject, controls}` you get the same hole from the other side — the attack verdicts cannot be
+compared if you never wrote them down.
 
 **It fails in both directions, and the second is the interesting one.** A control that stops being
 load-bearing is a regression. A control that *starts* being load-bearing without anyone claiming it

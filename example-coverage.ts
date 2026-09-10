@@ -8,7 +8,13 @@
 // The app below is FAKE and deliberately uneven: one control really stops an attack, one is pure
 // theatre, and one cannot be switched off at all. Those are the three answers you will get from a
 // real application, and seeing all three before you wire up your own is the point.
-import { compareToBaseline, measure, reportCoverage, type ControlledApp } from "./src/coverage.ts";
+import {
+  compareToBaseline,
+  coverageExitCode,
+  measure,
+  reportCoverage,
+  type ControlledApp,
+} from "./src/coverage.ts";
 import type { Outcome } from "./src/attacks/catalogue.ts";
 
 interface Switches {
@@ -87,7 +93,9 @@ reportCoverage(coverage);
 
 console.log();
 console.log("As JSON, this is what you commit as secure-ai-coverage.json:");
-console.log(JSON.stringify({ subject: coverage.subject, controls: coverage.controls }, null, 2));
+// THE WHOLE OBJECT, attacks included. Saving only {subject, controls} makes the attack verdicts
+// impossible to compare later, and that is how a run stays green while an attack starts landing.
+console.log(JSON.stringify(coverage, null, 2));
 
 // And what CI does with it. Here we compare the run against itself, which is the quiet case; in your
 // repository the baseline is the committed file from the last time someone claimed a change.
@@ -98,5 +106,12 @@ console.log(
     ? "Against the baseline: nothing changed. That is the result you want on most days."
     : problems.join("\n"),
 );
+
+// TWO gates, and they answer different questions. `compareToBaseline` asks "did anything change
+// since the baseline"; `coverageExitCode` asks "did an attack get through TODAY". A run can be
+// identical to its baseline and still be leaking, so fail on either.
+const codigo = problems.length > 0 || coverageExitCode(coverage) !== 0 ? 1 : 0;
+console.log(`Exit code would be ${codigo}: ${codigo === 0 ? "nothing changed and nothing got through" : "see above"}.`);
+
 console.log();
 console.log("This is a FAKE app. Point `run`/`without` at yours — see ADAPTING.md, section 3.");
