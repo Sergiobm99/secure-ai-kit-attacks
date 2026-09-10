@@ -20,7 +20,7 @@ must not do. So:
 - [**transcripts/**](transcripts/) — the three recorded runs where the attacks actually landed. They
   are the evidence the "stopped" results are replayed against, not an illustration.
 - [**src/guardrails/context-isolation.ts**](src/guardrails/context-isolation.ts) — the guardrail
-  itself, 38 lines, with the reasoning in the comments rather than in a blog post.
+  itself, 39 lines, with the reasoning in the comments rather than in a blog post.
 
 ## Run the attacks against your own app
 
@@ -91,7 +91,7 @@ that carried the payload. If your adapter reports only `text`, those two attacks
 
 The harness is not withheld to tease: it is bolted to the kit's own agent, and publishing it would
 mean publishing the kit. The adapter here does the useful half — pointing the attacks at *your*
-application — and it is 150 lines you can read.
+application — and it is 162 lines you can read.
 
 ## The licence
 

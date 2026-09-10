@@ -43,12 +43,25 @@ failures = 0
 for source, destination, imports in FILES:
     original = (KIT / source).read_text(encoding="utf-8")
     ported = original
+    fallo_de_import = False
     for old, new in imports:
         if old not in ported:
             print(f"!! {source}: import not found\n   {old[:100]}")
             failures += 1
-            continue
-        ported = ported.replace(old, new, 1)
+            fallo_de_import = True
+        else:
+            ported = ported.replace(old, new, 1)
+
+    # SI UNA REESCRITURA NO CASA, NO SE ESCRIBE NADA.
+    #
+    # Antes el `continue` saltaba solo esa reescritura y el `write_text` de abajo corria igual: con
+    # `ported` todavia identico al original, el fichero del KIT acababa publicado tal cual, con sus
+    # rutas internas dentro. Y la comprobacion del diff tampoco lo atrapaba, porque contra el original
+    # el diff estaba vacio. El unico aviso era una linea entre otras y un codigo de salida al final.
+    # Auditoria del 2026-09-09.
+    if fallo_de_import:
+        print(f"   {destination}: NO se escribe. Arregla la reescritura antes de publicar.")
+        continue
 
     (PUB / destination).parent.mkdir(parents=True, exist_ok=True)
     (PUB / destination).write_text(ported, encoding="utf-8", newline="\n")
@@ -161,6 +174,23 @@ for transcript in sorted(PUB.glob("transcripts/*.json")):
         failures += 1
     elif origen.read_bytes() != transcript.read_bytes():
         print(f"!! {transcript.name}: difiere del grabado en el kit.")
+        failures += 1
+
+# ------------------------------------------------------ las cifras del README son las de los ficheros
+#
+# El README decia 38 lineas del guardarrail y 150 del adaptador; eran 39 y 162. La primera se
+# desincronizo el dia que se le anadio la cabecera SPDX —un commit de una linea— y nadie lo vio,
+# porque una cifra en prosa no la comprueba nadie. Un numero concreto en la portada es una promesa
+# verificable en dos segundos por quien lee, y por eso vale la pena que sea cierto.
+# Auditoria del 2026-09-09.
+for fichero, etiqueta in [
+    ("src/guardrails/context-isolation.ts", "lines, with the reasoning in the comments"),
+    ("src/adapter.ts", "lines you can read"),
+]:
+    lineas = len((PUB / fichero).read_text(encoding="utf-8").splitlines())
+    readme_txt = (PUB / "README.md").read_text(encoding="utf-8")
+    if f"{lineas} {etiqueta}" not in readme_txt:
+        print(f"!! README.md dice otra cifra para {fichero}, que tiene {lineas} lineas")
         failures += 1
 
 # ------------------------------------------------------------------ el suelo de Node, en un solo sitio
