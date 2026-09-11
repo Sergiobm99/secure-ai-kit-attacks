@@ -2,15 +2,8 @@ Secure AI Kit — License Agreement
 
 Copyright (c) 2026 Sergio Belmonte Morales. All rights reserved.
 
-⚠️ NOT YET REVIEWED BY A LAWYER, and it must be before the first sale.
-
-The identity is filled in, and deliberately matches what the site's legal notice
-already publishes, so the two cannot drift apart: the licensor is a named individual,
-not a company. If that ever becomes a company, this document changes with it.
-
-What still needs a lawyer is the substance, and it matters more now that the site
-publishes a refund window, VAT handling and a twelve-month update commitment. This is
-a draft written to be clear and standard; it is not legal advice.
+⚠️ This licence has not yet been reviewed by a lawyer. It is written to be clear and
+standard, and it is not legal advice. When that review happens, this notice goes.
 
 --------------------------------------------------------------------------------
 
