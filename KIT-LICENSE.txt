@@ -2,6 +2,10 @@ Secure AI Kit — License Agreement
 
 Copyright (c) 2026 Sergio Belmonte Morales. All rights reserved.
 
+Licence text in force from 11 September 2026. The text in force on the date of
+Your purchase is the one that governs it: every published version of this file is
+kept under the repository's release tags, so a later edit cannot reach back.
+
 ⚠️ This licence has not yet been reviewed by a lawyer. It is written to be clear and
 standard, and it is not legal advice. When that review happens, this notice goes.
 
@@ -21,10 +25,17 @@ accept it, do not use the Kit.
 DEFINITIONS
 
   "You" / "Licensee"   the individual or organization that purchased a license.
-  "Developer"          a natural person who works with the Kit's source code.
-  "End Product"        an application or service You build that incorporates part
-                       of the Kit, and in which the Kit is not itself the product
-                       being distributed (see "Not permitted", below).
+  "Developer"          a natural person who works with the Kit's source code: an
+                       employee, or a contractor acting for the Licensee for the
+                       duration of their engagement. A contractor's right to the
+                       Kit ends with the engagement; they must then stop using it
+                       and delete their copies.
+  "Named Developer"    under the Personal License, the person behind the GitHub
+                       account given at purchase. It can be changed by writing to
+                       the Licensor; the previous account then loses access.
+  "End Product"        an application or service You build that incorporates any
+                       part or all of the Kit, and in which the Kit is not itself
+                       the product being distributed (see "Not permitted", below).
   "Licensor"           Sergio Belmonte Morales, the copyright holder.
 
 
@@ -43,12 +54,16 @@ DEFINITIONS
        team. A second Developer needs their own license.
      - Use the Kit to build End Products delivered to clients as contract or
        agency work. That is what the Commercial License is for.
+     - Hand an End Product's code to someone else to install and run for
+       themselves. Personal covers what You own and operate; the moment the code
+       leaves Your hands, that is the Commercial License.
 
 
 2. COMMERCIAL LICENSE  (indicative price: EUR 249, one-time)
 
    Granted to ONE organization (a company, or a sole trader operating as a
-   business), covering all of that organization's Developers.
+   business), covering all of that organization's Developers. A parent company and
+   its subsidiaries count as one organization for this purpose.
 
    You may:
      - Everything the Personal License allows.
@@ -65,12 +80,26 @@ DEFINITIONS
      for the same licensee. The original purchase is not refunded and does not need to
      be: nothing built under the Personal License stops being licensed.
 
+     If the upgrade is refunded, You return to the Personal License; the Personal
+     purchase is not cancelled. End Products delivered to clients under the
+     Commercial License before that refund stay licensed: nothing already delivered
+     stops being licensed, in either direction.
+
+   What Your client receives:
+     A client who receives an End Product from You may use and modify that End
+     Product, and keep doing so after Your engagement ends, without buying a license
+     of their own. They may not extract the Kit from it, redistribute the Kit
+     separately, or use the Kit as the base of another product: for any of that they
+     need their own license.
+
 
 3. TERMS COMMON TO BOTH TIERS
 
    Not permitted under any tier:
      - Reselling, sublicensing, publishing or otherwise redistributing the Kit's
-       source code, in whole or in substantial part, as itself.
+       source code, in whole or in substantial part, as itself. What a client of a
+       Commercial licensee receives is set out under "What Your client receives":
+       rights over the End Product, never over the Kit as itself.
      - Using the Kit to create a product that competes with it — a boilerplate,
        template, starter kit or course whose main value is the Kit's code.
      - Removing or altering this license or the copyright notices in the source.
@@ -85,6 +114,18 @@ DEFINITIONS
    Ownership: the Kit and all intellectual property in it remain the Licensor's.
    This Agreement grants a license to use, not a transfer of ownership. Your own
    original code in an End Product is yours.
+
+   Duration: this license is perpetual and does not expire. It ends only in the
+   cases named under Termination — a breach, or a refund or chargeback — and Your
+   access is "active" for as long as neither has happened. If the Licensor ever
+   closes the repository, the seller's terms commit to publishing a final archive
+   of its last state; either way, what You have already pulled remains licensed to
+   You under this Agreement.
+
+   Transfer: this license may pass to a new Licensee together with the business or
+   the End Product it was bought for — the sale of the company, or of the product —
+   by telling the Licensor who the new Licensee is. It is not otherwise
+   transferable, and it may not be sold on its own.
 
    Updates: your purchase includes access to updates released under the same tier,
    for as long as You hold a licence under this Agreement.
