@@ -59,8 +59,9 @@ DEFINITIONS
 
    Upgrading from Personal:
      A Personal licensee may move to the Commercial License at any time by paying the
-     difference between the two prices in force when the upgrade is purchased (EUR 150
-     at the prices named above). The Commercial License then replaces the Personal one
+     upgrade price in force when the upgrade is purchased. The upgrade is requested by
+     email and bought with the SAME GitHub username as the Personal purchase: that is
+     how the two are matched. The Commercial License then replaces the Personal one
      for the same licensee. The original purchase is not refunded and does not need to
      be: nothing built under the Personal License stops being licensed.
 
@@ -113,9 +114,10 @@ DEFINITIONS
    KIT OR ITS USE. Where liability cannot be excluded by law, it is limited to the
    amount You paid for the license.
 
-   Termination: this Agreement ends automatically if You breach it. On termination
-   You must stop using the Kit and destroy your copies of its source. End Products
-   already shipped in good faith before termination are not affected.
+   Termination: this Agreement ends automatically if You breach it, and it also ends
+   if the purchase is refunded or charged back, as the seller's refund policy states.
+   On termination You must stop using the Kit and destroy your copies of its source.
+   End Products already shipped in good faith before termination are not affected.
 
    Consumer rights: nothing in this Agreement removes rights You have under
    mandatory consumer-protection law that cannot be waived. Because the Kit is
